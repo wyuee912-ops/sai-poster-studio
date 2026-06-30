@@ -181,14 +181,56 @@ ASCII export.
 ## Project layout
 
 ```
-SKILL.md         the Claude Skill manifest (clone into ~/.claude/skills/ to install)
-src/poster/      templates, the editor (align/rotate/undo), auto-routing, export, live-sync, decor
-src/ascii/       the ASCII engine (ramps, colour modes, vector/high-DPI render)
-scripts/         generate.mjs (batch CLI) · watch.mjs (folder watcher) · push.mjs (live push)
-briefs/          example briefs + the brief format reference
-public/          butterfly.png (brand ASCII art) + favicon
-docs/            screenshots and example outputs (this README)
+sai-poster-studio/
+├── SKILL.md                 Claude Skill manifest — clone into ~/.claude/skills/ to install
+├── README.md                this file
+├── index.html               app entry (Vite mounts src/main.jsx)
+├── render.html              headless render harness entry (used by the CLI)
+├── vite.config.js           Vite config + the studio-doc-api dev plugin (the /api/doc live-sync)
+├── package.json             scripts: dev · build · preview · push · generate · watch
+│
+├── src/
+│   ├── main.jsx             React mount
+│   ├── App.jsx              app shell — header, panels, document state, live-sync (load/save/poll),
+│   │                        undo/redo + history, keyboard shortcuts, import/export wiring
+│   ├── styles.css           global styles + CSS variables (brand tokens)
+│   ├── brand.js             brand constants — colours, FONTS map, SIZES, Sai-mark paths, Google Fonts
+│   ├── studioSync.js        /api/doc client — fetchDoc / fetchVersion / saveDoc (no-ops with no server)
+│   ├── AsciiLab.jsx         the standalone "ASCII lab" tab
+│   ├── render.js            headless harness — exposes window.renderPNG / renderSVG / pickTemplate
+│   │
+│   ├── poster/              ◆ the poster engine
+│   │   ├── templates.js     the 11 templates + slot helpers, SLOT_ORDER, buildTemplate, readContent
+│   │   ├── auto.js          brief → template routing (autoTemplateId) + briefToContent + posterFromBrief
+│   │   ├── parseBrief.js    Markdown / JSON brief parser (DOM-free; used by app + CLI)
+│   │   ├── model.js         document model + element factories (text/accent/shape/tile/saiMark/image/ascii)
+│   │   ├── Editor.jsx       free-form canvas — drag / resize / rotate, snap-to-element guides, zoom
+│   │   ├── Inspector.jsx    right panel — per-element props, align buttons, decor + highlight controls
+│   │   ├── LayerList.jsx    the Layers tab — reorder / hide / delete / duplicate
+│   │   ├── exportPoster.js  PNG (canvas) + SVG renderers and the export buttons
+│   │   ├── decor.js         decorative background patterns (grid / dots / glow) for editor + PNG + SVG
+│   │   ├── richtext.js      per-word keyword-highlighting helpers (shared by editor + exporters)
+│   │   └── textfit.js       shrink-to-fit font sizing (so display titles never clip)
+│   │
+│   └── ascii/               ◆ the ASCII-art engine
+│       ├── asciiEngine.js   image → ASCII sampling + vector / high-DPI canvas render
+│       └── charRamps.js     the 8 character ramps + labels
+│
+├── scripts/                 ◆ automation (Node; no browser except generate/watch)
+│   ├── push.mjs             write a brief into the LIVE studio (.studio/current.json)
+│   ├── generate.mjs         headless batch CLI — brief(s) → PNG/SVG via Playwright
+│   └── watch.mjs            watch briefs/ and auto-render anything dropped in
+│
+├── briefs/                  example briefs (*.json, *.md) + briefs/README.md (the format reference)
+├── public/                  butterfly.png (brand ASCII art) · favicon.svg
+└── docs/                    screenshots + example outputs used by this README
+
+   not in git (see .gitignore): node_modules/ · dist/ · posters/ · .studio/current.json (the live doc)
 ```
+
+**Where to start reading:** `src/poster/templates.js` (what a poster *is*) → `src/poster/auto.js`
+(text → template) → `src/poster/exportPoster.js` (how it's drawn). The engine is the `poster/` and
+`ascii/` folders; everything in `scripts/` just drives that same engine headlessly.
 
 ---
 
