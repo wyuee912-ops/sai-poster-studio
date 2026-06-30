@@ -1,0 +1,23 @@
+{
+  "name": "sai-poster-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate": "node scripts/generate.mjs",
+    "watch": "node scripts/watch.mjs",
+    "push": "node scripts/push.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "playwright": "^1.47.0",
+    "vite": "^5.4.8"
+  }
+}
