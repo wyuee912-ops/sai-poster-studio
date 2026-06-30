@@ -46,6 +46,17 @@ export default function App() {
   const lastLocalSave = useRef(0);         // when we last wrote (to ignore our own change while polling)
   const applyingExternal = useRef(false);  // we just setDoc() from disk — don't echo it straight back
 
+  // ---- Undo / redo ----
+  const docRef = useRef(doc); docRef.current = doc;
+  const histPast = useRef([]);
+  const histFuture = useRef([]);
+  const histBase = useRef(undefined);      // last committed snapshot
+  const histSkip = useRef(false);          // a doc change caused by undo/redo — don't record it
+  const histReset = useRef(false);         // an external load — start a fresh baseline
+  const histTimer = useRef(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
   // On startup, prefer the on-disk document so localhost shows the same poster
   // in every browser. Falls back to whatever loadDoc() seeded (localStorage).
   useEffect(() => {
@@ -57,6 +68,7 @@ export default function App() {
         serverV.current = v || 0;
         if (serverDoc && serverDoc.size && Array.isArray(serverDoc.elements)) {
           applyingExternal.current = true;
+          histReset.current = true;
           setDoc(serverDoc);
           setSelectedId(null);
         }
@@ -94,6 +106,7 @@ export default function App() {
           serverV.current = v2 || v;
           if (serverDoc && serverDoc.size && Array.isArray(serverDoc.elements)) {
             applyingExternal.current = true;
+            histReset.current = true;
             setDoc(serverDoc);
             setSelectedId(null);
             setImportMsg("↻ Loaded the latest poster from disk");
@@ -103,6 +116,60 @@ export default function App() {
     }, 2000);
     return () => clearInterval(id);
   }, []);
+
+  // Record stable document states for undo (debounced, so a whole drag or a
+  // burst of typing collapses into ONE undo step). External loads reset the
+  // baseline; undo/redo changes are flagged so they aren't re-recorded.
+  useEffect(() => {
+    if (!hydrated.current) { histBase.current = doc; return; }
+    if (histSkip.current) { histSkip.current = false; return; }
+    if (histReset.current) {
+      histReset.current = false;
+      histPast.current = []; histFuture.current = [];
+      histBase.current = doc; setCanUndo(false); setCanRedo(false);
+      return;
+    }
+    if (histBase.current === undefined || doc === histBase.current) { histBase.current = doc; return; }
+    if (histTimer.current) clearTimeout(histTimer.current);
+    histTimer.current = setTimeout(() => {
+      histPast.current.push(histBase.current);
+      if (histPast.current.length > 80) histPast.current.shift();
+      histFuture.current = [];
+      histBase.current = doc;
+      setCanUndo(true); setCanRedo(false);
+    }, 450);
+    return () => histTimer.current && clearTimeout(histTimer.current);
+  }, [doc]);
+
+  const undo = () => {
+    if (histTimer.current) clearTimeout(histTimer.current);
+    // capture an edit made within the debounce window before stepping back
+    if (hydrated.current && histBase.current !== undefined && docRef.current !== histBase.current) {
+      histPast.current.push(histBase.current);
+      histBase.current = docRef.current;
+    }
+    if (!histPast.current.length) return;
+    const prev = histPast.current.pop();
+    histFuture.current.push(histBase.current);
+    histBase.current = prev;
+    histSkip.current = true;
+    setSelectedId(null);
+    setDoc(prev);
+    setCanUndo(histPast.current.length > 0);
+    setCanRedo(true);
+  };
+
+  const redo = () => {
+    if (!histFuture.current.length) return;
+    const next = histFuture.current.pop();
+    histPast.current.push(histBase.current);
+    histBase.current = next;
+    histSkip.current = true;
+    setSelectedId(null);
+    setDoc(next);
+    setCanUndo(true);
+    setCanRedo(histFuture.current.length > 0);
+  };
 
   const updateEl = (id, patch) =>
     setDoc((d) => ({
@@ -180,7 +247,10 @@ export default function App() {
     const onKey = (e) => {
       const t = e.target;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-      if (!selectedId || tab !== "editor") return;
+      if (tab !== "editor") return;
+      if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "y" || e.key === "Y")) { e.preventDefault(); redo(); return; }
+      if (!selectedId) return;
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); deleteEl(selectedId); setSelectedId(null); }
       else if ((e.metaKey || e.ctrlKey) && (e.key === "d" || e.key === "D")) { e.preventDefault(); duplicateEl(selectedId); }
       else if (e.key.startsWith("Arrow")) {
@@ -261,6 +331,8 @@ export default function App() {
         <div style={{ flex: 1 }} />
         {tab === "editor" && (
           <div className="row" style={{ gap: 8 }}>
+            <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Undo (⌘/Ctrl+Z)" disabled={!canUndo} onClick={undo}>↶</button>
+            <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Redo (⌘/Ctrl+Shift+Z)" disabled={!canRedo} onClick={redo}>↷</button>
             <button className="btn" style={{ padding: "6px 12px" }} onClick={() => setShowTemplates(true)}>Templates</button>
             <label className="btn primary" style={{ padding: "6px 12px" }} title="brief.json in → auto-pick template, fill, and export a PNG. One click.">
               {busy === "png" ? "Generating…" : "Auto-generate"}
