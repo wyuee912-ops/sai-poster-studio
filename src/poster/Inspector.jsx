@@ -9,7 +9,7 @@ const COLOR_MODES = [
   ["color", "Color"],
 ];
 
-export default function Inspector({ el, onUpdate, background, onBackground }) {
+export default function Inspector({ el, onUpdate, background, onBackground, size }) {
   if (!el) {
     return (
       <div className="col" style={{ gap: 14 }}>
@@ -52,7 +52,25 @@ export default function Inspector({ el, onUpdate, background, onBackground }) {
           <Number label="W" value={el.w} onChange={(v) => set({ w: v })} />
           <Number label="H" value={el.h} onChange={(v) => set({ h: v })} />
         </div>
-        <Number label="Rotation°" value={el.rotation || 0} onChange={(v) => set({ rotation: v })} />
+        {size && (
+          <div className="col" style={{ gap: 4 }}>
+            <span className="field-label">Align to canvas</span>
+            <div className="row" style={{ gap: 6 }}>
+              <AlignBtn title="Left edge" onClick={() => set({ x: 0 })}>⇤</AlignBtn>
+              <AlignBtn title="Center horizontally" onClick={() => set({ x: Math.round((size.w - el.w) / 2) })}>↔</AlignBtn>
+              <AlignBtn title="Right edge" onClick={() => set({ x: size.w - el.w })}>⇥</AlignBtn>
+              <AlignBtn title="Top edge" onClick={() => set({ y: 0 })}>⤒</AlignBtn>
+              <AlignBtn title="Center vertically" onClick={() => set({ y: Math.round((size.h - el.h) / 2) })}>↕</AlignBtn>
+              <AlignBtn title="Bottom edge" onClick={() => set({ y: size.h - el.h })}>⤓</AlignBtn>
+            </div>
+          </div>
+        )}
+        <div className="row" style={{ gap: 6, alignItems: "flex-end" }}>
+          <Number label="Rotation°" value={el.rotation || 0} onChange={(v) => set({ rotation: v })} />
+          <AlignBtn title="Rotate −15°" onClick={() => set({ rotation: Math.round((el.rotation || 0) - 15) })}>−15</AlignBtn>
+          <AlignBtn title="Rotate +15°" onClick={() => set({ rotation: Math.round((el.rotation || 0) + 15) })}>+15</AlignBtn>
+          <AlignBtn title="Reset rotation" onClick={() => set({ rotation: 0 })}>0°</AlignBtn>
+        </div>
       </div>
 
       <div className="col" style={{ gap: 4 }}>
@@ -145,6 +163,14 @@ export default function Inspector({ el, onUpdate, background, onBackground }) {
         </div>
       )}
     </div>
+  );
+}
+
+function AlignBtn({ title, onClick, children }) {
+  return (
+    <button title={title} onClick={onClick} style={{ flex: 1, minWidth: 0, height: 30, border: "1px solid var(--line2)", background: "#fff", borderRadius: 6, cursor: "pointer", fontSize: 14, fontWeight: 600, lineHeight: 1, color: "#15161a" }}>
+      {children}
+    </button>
   );
 }
 

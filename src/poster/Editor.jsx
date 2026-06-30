@@ -59,23 +59,42 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
   useEffect(() => {
     if (!dragging) return;
     const SNAP = 6 / scale;
+    const W = doc.size.w, H = doc.size.h;
     const move = (e) => {
       const g = gesture.current;
       if (!g) return;
+      if (g.mode === "rotate") {
+        const ang = Math.atan2(e.clientY - g.cy, e.clientX - g.cx);
+        let deg = g.startRot + ((ang - g.startAng) * 180) / Math.PI;
+        deg = ((deg % 360) + 360) % 360;
+        const near = Math.round(deg / 15) * 15;          // soft-snap to 15° steps
+        if (Math.abs(deg - near) < 4) deg = near % 360;
+        onUpdateRef.current(g.id, { rotation: Math.round(deg) });
+        return;
+      }
       const dx = (e.clientX - g.sx) / scale;
       const dy = (e.clientY - g.sy) / scale;
       if (g.mode === "move") {
         let nx = g.ox + dx;
         let ny = g.oy + dy;
+        // snap lines: the canvas (edges + center) AND every other element's edges + centers
+        const vlines = [0, W / 2, W];
+        const hlines = [0, H / 2, H];
+        for (const o of doc.elements) {
+          if (o.id === g.id || o.visible === false) continue;
+          vlines.push(o.x, o.x + o.w / 2, o.x + o.w);
+          hlines.push(o.y, o.y + o.h / 2, o.y + o.h);
+        }
         const gl = [];
-        const W = doc.size.w, H = doc.size.h;
-        const cx = nx + g.ow / 2, cy = ny + g.oh / 2;
-        if (Math.abs(cx - W / 2) < SNAP) { nx = W / 2 - g.ow / 2; gl.push({ x: W / 2 }); }
-        if (Math.abs(cy - H / 2) < SNAP) { ny = H / 2 - g.oh / 2; gl.push({ y: H / 2 }); }
-        if (Math.abs(nx) < SNAP) { nx = 0; gl.push({ x: 0 }); }
-        if (Math.abs(ny) < SNAP) { ny = 0; gl.push({ y: 0 }); }
-        if (Math.abs(nx + g.ow - W) < SNAP) { nx = W - g.ow; gl.push({ x: W }); }
-        if (Math.abs(ny + g.oh - H) < SNAP) { ny = H - g.oh; gl.push({ y: H }); }
+        // X: snap left/center/right of the dragged box to the nearest line within SNAP
+        let bestX = SNAP, snapX = null, guideX = null;
+        for (const [anchor, off] of [[nx, 0], [nx + g.ow / 2, g.ow / 2], [nx + g.ow, g.ow]])
+          for (const ln of vlines) { const d = Math.abs(anchor - ln); if (d < bestX) { bestX = d; snapX = ln - off; guideX = ln; } }
+        if (snapX != null) { nx = snapX; gl.push({ x: guideX }); }
+        let bestY = SNAP, snapY = null, guideY = null;
+        for (const [anchor, off] of [[ny, 0], [ny + g.oh / 2, g.oh / 2], [ny + g.oh, g.oh]])
+          for (const ln of hlines) { const d = Math.abs(anchor - ln); if (d < bestY) { bestY = d; snapY = ln - off; guideY = ln; } }
+        if (snapY != null) { ny = snapY; gl.push({ y: guideY }); }
         setGuides(gl);
         onUpdateRef.current(g.id, { x: Math.round(nx), y: Math.round(ny) });
       } else {
@@ -95,7 +114,7 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
-  }, [dragging, scale, doc.size.w, doc.size.h]);
+  }, [dragging, scale, doc.size.w, doc.size.h, doc.elements]);
 
   function startMove(e, el) {
     e.stopPropagation();
@@ -107,6 +126,15 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
     e.stopPropagation();
     onSelect(el.id);
     gesture.current = { mode: "resize", corner, id: el.id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y, ow: el.w, oh: el.h };
+    setDragging(true);
+  }
+  function startRotate(e, el) {
+    e.stopPropagation();
+    onSelect(el.id);
+    const rect = stageRef.current.getBoundingClientRect();
+    const cx = rect.left + (el.x + el.w / 2) * scale; // element centre in screen coords (rotation pivot)
+    const cy = rect.top + (el.y + el.h / 2) * scale;
+    gesture.current = { mode: "rotate", id: el.id, cx, cy, startAng: Math.atan2(e.clientY - cy, e.clientX - cx), startRot: el.rotation || 0 };
     setDragging(true);
   }
 
@@ -136,6 +164,7 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
                   selected={el.id === selectedId}
                   onStartMove={(e) => startMove(e, el)}
                   onStartResize={(e, c) => startResize(e, el, c)}
+                  onStartRotate={(e) => startRotate(e, el)}
                 />
               )
             )}
@@ -171,7 +200,7 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
 const ZB = { width: 28, height: 28, border: "1px solid #d6d6d0", background: "#fff", borderRadius: 7, fontSize: 17, fontWeight: 700, lineHeight: 1, color: "#15161a", cursor: "pointer", display: "grid", placeItems: "center" };
 const ZBW = { ...ZB, width: "auto", padding: "0 10px", fontSize: 12 };
 
-function ElementView({ el, scale, selected, onStartMove, onStartResize }) {
+function ElementView({ el, scale, selected, onStartMove, onStartResize, onStartRotate }) {
   const style = {
     position: "absolute",
     left: el.x * scale,
@@ -188,6 +217,16 @@ function ElementView({ el, scale, selected, onStartMove, onStartResize }) {
       <div style={{ width: "100%", height: "100%", opacity: el.props?.opacity ?? 1 }}>
         <ElementContent el={el} scale={scale} />
       </div>
+      {selected && (
+        <>
+          <div style={{ position: "absolute", left: "50%", top: -22, width: 1, height: 22, background: "#16d342", pointerEvents: "none" }} />
+          <div
+            onPointerDown={onStartRotate}
+            title="Drag to rotate (snaps to 15°)"
+            style={{ position: "absolute", left: "calc(50% - 7px)", top: -29, width: 14, height: 14, background: "#fff", border: "1.5px solid #16d342", borderRadius: "50%", cursor: "grab" }}
+          />
+        </>
+      )}
       {selected &&
         HANDLES.map(([c, hx, hy]) => (
           <div
