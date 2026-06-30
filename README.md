@@ -17,22 +17,47 @@ from plain text files — no manual design, no clicks.
 
 ## What it can do
 
+- **Works as a Claude Skill — no API keys** — describe a poster in plain English and Claude writes the
+  brief and renders it. The LLM work is your own Claude session; the app only renders, client-side — so
+  there's no key anywhere. See *[Use it as a Claude Skill](#use-it-as-a-claude-skill-no-api-keys)*.
 - **11 on-brand templates** — event cards, talk/speaker layouts, benchmark stat sheets, launch
   statements, hackathon posters, editorial features, mixers, and more. Every one is built to the
   Simular brand: Manrope + Adamina type, the signal-green `#16D342`, and the Sai mark.
-- **Fill-in-the-blank *or* free-form** — type into the Content panel and the poster updates live,
-  or select any element on the canvas to drag, resize, rotate, and restyle it (font, size, colour,
-  alignment, opacity, tracking).
+- **Free-form editor** — type into the Content panel for live updates, or select any element to drag,
+  resize, and **rotate** (drag handle, snaps to 15°). **Align-to-canvas** buttons + **snap-to-element
+  guides** make alignment exact, and **undo / redo** (⌘/Ctrl+Z · ⌘/Ctrl+Shift+Z) has your back.
 - **Every platform size** — Instagram square / portrait, LinkedIn, X. Switch and the layout reflows.
 - **Text → poster, automatically** — a tiny Markdown or JSON *brief* auto-picks a template, fills
   it, and renders it. Run one-off, batch a whole folder, watch a folder, or push straight into the
   open editor.
 - **High-resolution ASCII art** — a built-in engine renders crisp vector / high-DPI ASCII (8 ramps,
   multiple colour modes). The brand butterfly ships in `public/`.
+- **Restyle in place** — decorative **background patterns** (grid / dots / glow), per-word **keyword
+  highlighting**, five fonts (Manrope / Inter / Adamina / Instrument / Mono), and per-layer opacity.
 - **Print-quality export** — PNG at 2× / 3× / 4× (up to ~4800 px), true-vector SVG, or re-editable JSON.
 - **One shared live document** — the editor, the CLI, and `npm run push` all read and write a single
   file, so every browser shows the same poster and a freshly generated poster appears in your open
   editor within ~2 seconds.
+
+---
+
+## Use it as a Claude Skill (no API keys)
+
+This repo **is** a Claude Skill — the `SKILL.md` at the root makes it installable and invocable. There
+are **no API keys**: Claude (your own session) turns your text into a brief, and the app renders it in
+the browser. Install it into your skills folder:
+
+```bash
+git clone git@github.com:wyuee912-ops/sai-poster-studio.git ~/.claude/skills/sai-poster-studio
+cd ~/.claude/skills/sai-poster-studio && npm install
+```
+
+Then, in Claude Code, just describe a poster:
+
+> **/sai-poster-studio** Day 2 of #SaiCoded — Sai makes editable docs, sheets & slides, saved to your Drive
+
+Claude extracts a brief, pushes it into the studio, and you preview + export at `localhost:5181`.
+Anyone you share the repo with gets the **same keyless flow** — *their* Claude is the engine.
 
 ---
 
@@ -94,9 +119,10 @@ npm run watch                                       # → auto-render anything d
 `generate` / `watch` drive the **same renderer** the app uses (via headless Chromium), so output is
 identical. SVG instead of PNG: add `--svg`. One-time setup for headless: `npx playwright install chromium`.
 
-**3. From plain English** — describe the poster to Claude (the Content Engine half of this project);
-it extracts a brief and pushes it for you. e.g. *"Day 1 of our countdown, theme 'your wildest idea',
-tag #trysai"* → a finished launch poster on the canvas.
+**3. From plain English — the Claude Skill** — describe the poster to Claude and it extracts a brief
+and pushes it for you. e.g. *"Day 2 of #SaiCoded — Sai makes editable docs, sheets & slides"* → a
+finished poster on the canvas. See *[Use it as a Claude Skill](#use-it-as-a-claude-skill-no-api-keys)*
+above. No API keys.
 
 ---
 
@@ -155,7 +181,8 @@ ASCII export.
 ## Project layout
 
 ```
-src/poster/      templates, the editor, auto-routing, export, the live-sync client
+SKILL.md         the Claude Skill manifest (clone into ~/.claude/skills/ to install)
+src/poster/      templates, the editor (align/rotate/undo), auto-routing, export, live-sync, decor
 src/ascii/       the ASCII engine (ramps, colour modes, vector/high-DPI render)
 scripts/         generate.mjs (batch CLI) · watch.mjs (folder watcher) · push.mjs (live push)
 briefs/          example briefs + the brief format reference
