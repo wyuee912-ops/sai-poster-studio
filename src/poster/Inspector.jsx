@@ -1,6 +1,7 @@
 import React from "react";
 import { RAMPS, RAMP_LABELS } from "../ascii/charRamps.js";
 import { FONTS } from "../brand.js";
+import { DECOR_KINDS } from "./decor.js";
 
 const COLOR_MODES = [
   ["mono", "Mono"],
@@ -9,7 +10,7 @@ const COLOR_MODES = [
   ["color", "Color"],
 ];
 
-export default function Inspector({ el, onUpdate, background, onBackground, size }) {
+export default function Inspector({ el, onUpdate, background, onBackground, size, decor, onDecor }) {
   if (!el) {
     return (
       <div className="col" style={{ gap: 14 }}>
@@ -27,6 +28,25 @@ export default function Inspector({ el, onUpdate, background, onBackground, size
             ))}
           </div>
         </div>
+        {onDecor && (
+          <div className="col" style={{ gap: 6 }}>
+            <span className="field-label">Background pattern</span>
+            <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+              {DECOR_KINDS.map((k) => (
+                <button key={k} className={`btn ${(decor?.kind || "none") === k ? "active" : ""}`} style={{ padding: "5px 9px", fontSize: 12, textTransform: "capitalize" }} onClick={() => onDecor({ ...(decor || {}), kind: k })}>{k}</button>
+              ))}
+            </div>
+            {decor?.kind && decor.kind !== "none" && (
+              <div className="col" style={{ gap: 8, marginTop: 2 }}>
+                <ColorField label="Pattern color" value={decor.color || "#16d342"} onChange={(v) => onDecor({ ...decor, color: v })} />
+                <div className="col" style={{ gap: 4 }}>
+                  <span className="field-label">Pattern opacity — {Math.round((decor.opacity ?? 0.14) * 100)}%</span>
+                  <input type="range" min="0" max="100" value={Math.round((decor.opacity ?? 0.14) * 100)} onChange={(e) => onDecor({ ...decor, opacity: +e.target.value / 100 })} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <p style={{ color: "var(--soft)", fontSize: 12, lineHeight: 1.5 }}>Tip: Del removes a layer, arrow keys nudge, ⌘/Ctrl+D duplicates.</p>
       </div>
     );
@@ -106,6 +126,13 @@ export default function Inspector({ el, onUpdate, background, onBackground, size
               </select>
             </div>
           </div>
+          <div className="col" style={{ gap: 4 }}>
+            <span className="field-label">Highlight words (comma-separated)</span>
+            <input type="text" placeholder="e.g. wildest, free" value={(p.highlight || []).join(", ")} onChange={(e) => setProp({ highlight: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
+          </div>
+          {(p.highlight || []).length > 0 && (
+            <ColorField label="Highlight color" value={p.highlightColor || "#16D342"} onChange={(v) => setProp({ highlightColor: v })} />
+          )}
         </div>
       )}
 

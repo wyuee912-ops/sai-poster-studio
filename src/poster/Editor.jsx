@@ -4,6 +4,8 @@ import { RAMPS } from "../ascii/charRamps.js";
 import { sampleImage, renderAsciiCanvas } from "../ascii/asciiEngine.js";
 import { fitFont } from "./textfit.js";
 import { makeSampleCanvas } from "./model.js";
+import { decorStyle } from "./decor.js";
+import { hiSetOf, tokenize, isHi } from "./richtext.js";
 
 const HANDLES = [
   ["nw", 0, 0],
@@ -155,6 +157,9 @@ export default function Editor({ doc, selectedId, onSelect, onUpdate, stageRef }
               flex: "0 0 auto",
             }}
           >
+            {decorStyle(doc.decor, scale) && (
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none", ...decorStyle(doc.decor, scale) }} />
+            )}
             {doc.elements.map((el) =>
               el.visible === false ? null : (
                 <ElementView
@@ -254,6 +259,11 @@ function ElementContent({ el, scale }) {
   if (el.type === "text") {
     const stack = fontStack(p.font);
     const effSize = p.shrink ? fitFont(p.text, p.fontSize, p.weight, el.w, p.uppercase, stack) : p.fontSize;
+    const hiSet = hiSetOf(p.highlight);
+    const hiColor = p.highlightColor || BRAND.green;
+    const body = hiSet.size
+      ? tokenize(p.text).map((t, i) => (isHi(t, hiSet) ? <span key={i} style={{ color: hiColor }}>{t}</span> : t))
+      : p.text;
     return (
       <div
         style={{
@@ -272,7 +282,7 @@ function ElementContent({ el, scale }) {
           wordBreak: "break-word",
         }}
       >
-        {p.text}
+        {body}
       </div>
     );
   }

@@ -147,6 +147,7 @@ export default function App() {
     });
 
   const setBackground = (color) => setDoc((d) => ({ ...d, background: color }));
+  const setDecor = (decor) => setDoc((d) => ({ ...d, decor }));
 
   const changeSize = (key) => {
     const content = readContent(doc);
@@ -328,7 +329,7 @@ export default function App() {
               <Editor doc={doc} selectedId={selectedId} onSelect={setSelectedId} onUpdate={updateEl} />
             </main>
             <aside style={{ borderLeft: "1px solid var(--line)", padding: 16, overflow: "auto", background: "var(--surface)" }}>
-              <Inspector el={selected} onUpdate={updateEl} background={doc.background} onBackground={setBackground} size={doc.size} />
+              <Inspector el={selected} onUpdate={updateEl} background={doc.background} onBackground={setBackground} size={doc.size} decor={doc.decor} onDecor={setDecor} />
             </aside>
           </div>
         )}

@@ -7,6 +7,8 @@ import { RAMPS } from "../ascii/charRamps.js";
 import { sampleImage, renderAsciiCanvas } from "../ascii/asciiEngine.js";
 import { fitFont } from "./textfit.js";
 import { makeSampleCanvas } from "./model.js";
+import { drawDecor, decorSvg } from "./decor.js";
+import { hiSetOf, tokenize, isHi } from "./richtext.js";
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -92,6 +94,7 @@ export async function renderPosterCanvas(doc, scale = 3) {
   const ctx = cv.getContext("2d");
   ctx.fillStyle = doc.background || "#ffffff";
   ctx.fillRect(0, 0, cv.width, cv.height);
+  drawDecor(ctx, doc.decor, cv.width, cv.height, scale);
 
   for (const el of doc.elements) {
     if (el.visible === false) continue;
@@ -125,13 +128,28 @@ export async function renderPosterCanvas(doc, scale = 3) {
       ctx.textBaseline = "top";
       ctx.fillStyle = p.color;
       ctx.font = `${p.weight} ${effSize * scale}px ${stack}`;
-      ctx.textAlign = p.align === "center" ? "center" : p.align === "right" ? "right" : "left";
+      const align = p.align === "center" ? "center" : p.align === "right" ? "right" : "left";
       if ("letterSpacing" in ctx) ctx.letterSpacing = `${(p.tracking || 0) * scale}px`;
-      const tx = p.align === "center" ? X + W / 2 : p.align === "right" ? X + W : X;
+      const tx = align === "center" ? X + W / 2 : align === "right" ? X + W : X;
       const lineH = effSize * (p.lineHeight || 1.1) * scale;
       const content = p.uppercase ? String(p.text).toUpperCase() : p.text;
+      ctx.textAlign = align;
       const lines = wrapLines(ctx, content, W);
-      lines.forEach((ln, i) => ctx.fillText(ln, tx, Y + i * lineH));
+      const hiSet = hiSetOf(p.highlight);
+      if (hiSet.size) {
+        const hiColor = p.highlightColor || BRAND.green;
+        ctx.textAlign = "left"; // draw token-by-token at computed x
+        lines.forEach((ln, i) => {
+          const toks = tokenize(ln);
+          const widths = toks.map((t) => ctx.measureText(t).width);
+          const total = widths.reduce((a, b) => a + b, 0);
+          let cx = align === "center" ? tx - total / 2 : align === "right" ? tx - total : tx;
+          const yy = Y + i * lineH;
+          toks.forEach((t, j) => { ctx.fillStyle = isHi(t, hiSet) ? hiColor : p.color; ctx.fillText(t, cx, yy); cx += widths[j]; });
+        });
+      } else {
+        lines.forEach((ln, i) => ctx.fillText(ln, tx, Y + i * lineH));
+      }
       ctx.textAlign = "left";
       if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
     } else if (el.type === "accent") {
@@ -196,6 +214,7 @@ export async function renderPosterSvg(doc) {
   const W = doc.size.w, H = doc.size.h;
   const parts = [];
   parts.push(`<rect width="${W}" height="${H}" fill="${doc.background || "#ffffff"}"/>`);
+  parts.push(decorSvg(doc.decor, W, H));
 
   for (const el of doc.elements) {
     if (el.visible === false) continue;
@@ -224,8 +243,12 @@ export async function renderPosterSvg(doc) {
       const tx = p.align === "center" ? el.x + el.w / 2 : p.align === "right" ? el.x + el.w : el.x;
       const lineH = effSize * (p.lineHeight || 1.1);
       const track = p.tracking ? ` letter-spacing="${p.tracking}"` : "";
+      const hiSet = hiSetOf(p.highlight);
+      const hiColor = p.highlightColor || BRAND.green;
+      const lineContent = (ln) =>
+        hiSet.size ? tokenize(ln).map((t) => (isHi(t, hiSet) ? `<tspan fill="${hiColor}">${esc(t)}</tspan>` : esc(t))).join("") : esc(ln);
       const tspans = lines
-        .map((ln, i) => `<tspan x="${tx.toFixed(1)}" y="${(el.y + effSize * 0.82 + i * lineH).toFixed(1)}">${esc(ln)}</tspan>`)
+        .map((ln, i) => `<tspan x="${tx.toFixed(1)}" y="${(el.y + effSize * 0.82 + i * lineH).toFixed(1)}">${lineContent(ln)}</tspan>`)
         .join("");
       parts.push(`<text font-family="${stack.replace(/"/g, "'")}" font-weight="${p.weight}" font-size="${effSize}" fill="${p.color}" text-anchor="${anchor}"${track}${opAttr}>${tspans}</text>`);
     } else if (el.type === "accent") {
