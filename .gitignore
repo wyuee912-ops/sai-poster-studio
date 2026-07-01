@@ -8,6 +8,9 @@ dist/
 .studio/
 posters/
 
+# unreleased campaign briefs — kept locally, never published
+briefs/campaigns/
+
 # os / editor noise
 .DS_Store
 *.log

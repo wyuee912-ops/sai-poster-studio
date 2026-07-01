@@ -54,7 +54,7 @@ cd ~/.claude/skills/sai-poster-studio && npm install
 
 Then, in Claude Code, just describe a poster:
 
-> **/sai-poster-studio** Day 2 of #SaiCoded — Sai makes editable docs, sheets & slides, saved to your Drive
+> **/sai-poster-studio** Launch post — Sai is the agent that uses your computer for you
 
 Claude extracts a brief, pushes it into the studio, and you preview + export at `localhost:5181`.
 Anyone you share the repo with gets the **same keyless flow** — *their* Claude is the engine.
@@ -81,7 +81,7 @@ Each poster below was produced by the Studio from a short brief — no manual la
 <table>
   <tr>
     <td align="center"><img src="docs/examples/benchmark.png" width="240"><br><sub><b>benchmark-dark</b><br>stat showcase</sub></td>
-    <td align="center"><img src="docs/examples/saicoded-day1.png" width="240"><br><sub><b>launch</b><br>campaign / announcement</sub></td>
+    <td align="center"><img src="docs/examples/launch.png" width="240"><br><sub><b>launch</b><br>statement / announcement</sub></td>
     <td align="center"><img src="docs/examples/agent-mixer.png" width="240"><br><sub><b>happy-hour</b><br>mixer / social</sub></td>
   </tr>
   <tr>
@@ -125,7 +125,7 @@ any to open full size). So "dump 10 ideas → get 10 posters you can view at onc
 into a folder, run `generate`, open the gallery.
 
 **3. From plain English — the Claude Skill** — describe the poster to Claude and it extracts a brief
-and pushes it for you. e.g. *"Day 2 of #SaiCoded — Sai makes editable docs, sheets & slides"* → a
+and pushes it for you. e.g. *"Launch post — Sai is the agent that uses your computer for you"* → a
 finished poster on the canvas. See *[Use it as a Claude Skill](#use-it-as-a-claude-skill-no-api-keys)*
 above. No API keys.
 
@@ -139,12 +139,12 @@ A brief is the text of a poster. Markdown is the friendly way:
 ---
 type: launch            # optional: event | launch | article — nudges the template
 ---
-# Your wildest idea     ← the H1 is the Title
+# Don't wait for the future. Build it.     ← the H1 is the Title
 
-Eyebrow: Day 1 · #saicoded
-Subtitle: The boldest thing you'd try with Sai — what is it?
-CTA: Reply with yours
-Footer: #trysai · simular.ai
+Eyebrow: Sai 2.0
+Subtitle: The agent that uses your computer for you.
+CTA: Try Sai
+Footer: simular.ai
 ```
 
 `# Heading` → Title · `Key: value` → that field · a key followed by a bullet list joins the bullets

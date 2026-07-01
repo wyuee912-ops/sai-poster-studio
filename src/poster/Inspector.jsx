@@ -128,7 +128,7 @@ export default function Inspector({ el, onUpdate, background, onBackground, size
           </div>
           <div className="col" style={{ gap: 4 }}>
             <span className="field-label">Highlight words (comma-separated)</span>
-            <input type="text" placeholder="e.g. wildest, free" value={(p.highlight || []).join(", ")} onChange={(e) => setProp({ highlight: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
+            <input type="text" placeholder="e.g. now, free" value={(p.highlight || []).join(", ")} onChange={(e) => setProp({ highlight: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
           </div>
           {(p.highlight || []).length > 0 && (
             <ColorField label="Highlight color" value={p.highlightColor || "#16D342"} onChange={(v) => setProp({ highlightColor: v })} />

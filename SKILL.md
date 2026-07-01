@@ -62,12 +62,12 @@ followed by a bullet list joins the bullets; front-matter picks type/template.
 type: launch          # optional: event | launch | article — nudges the template
 template: launch      # optional: force a template, skip auto-pick
 ---
-# Your wildest idea   ← the H1 is the Title
+# Don't wait for the future. Build it.   ← the H1 is the Title
 
-Eyebrow: Day 1 · #saicoded
-Subtitle: The boldest thing you'd try with Sai — what is it?
-CTA: Reply with yours
-Footer: #trysai · simular.ai
+Eyebrow: Sai 2.0
+Subtitle: The agent that uses your computer for you.
+CTA: Try Sai
+Footer: simular.ai
 ```
 
 **Convenience fields** (mapped for you): `headline` (or the `# H1`) → Title ·
@@ -91,7 +91,7 @@ event) → `cal-hacks`.
 - Accent color is the signal-green **`#16D342`** only. No other accent colors.
 - Type is **Manrope** (headlines/body) + **Adamina** (serif accents, editorial).
 - Keep copy tight: one idea per poster, short punchy headline, ≤ ~14-word subhead.
-- Footer is usually `simular.ai` (or a campaign tag like `#trysai · simular.ai`).
+- Footer is usually `simular.ai` (or a campaign tag like `#yourtag · simular.ai`).
 
 ## Workflow
 
@@ -116,11 +116,11 @@ cat > /tmp/sai-brief.md <<'BRIEF'
 ---
 type: launch
 ---
-# Your wildest idea
-Eyebrow: Day 1 · #saicoded
-Subtitle: The boldest thing you'd try with Sai — what is it?
-CTA: Reply with yours
-Footer: #trysai · simular.ai
+# Don't wait for the future. Build it.
+Eyebrow: Sai 2.0
+Subtitle: The agent that uses your computer for you.
+CTA: Try Sai
+Footer: simular.ai
 BRIEF
 npm run push /tmp/sai-brief.md                 # appears in the open editor within ~2s
 ```
@@ -152,7 +152,7 @@ push them one at a time. Write one brief per idea into a dedicated folder, rende
 the **gallery** (a contact sheet of every poster). Needs `npx playwright install chromium` once.
 
 ```bash
-mkdir -p briefs/<batch>                 # e.g. briefs/saicoded
+mkdir -p briefs/<batch>                 # e.g. briefs/launch-week
 # write one brief per idea, numbered so the gallery is ordered:
 #   briefs/<batch>/01-slug.md, briefs/<batch>/02-slug.md, …
 npm run generate briefs/<batch> --out posters/<batch> --scale 3
