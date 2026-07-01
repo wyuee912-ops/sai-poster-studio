@@ -6,6 +6,7 @@ import { fitFont } from "./textfit.js";
 import { makeSampleCanvas } from "./model.js";
 import { decorStyle } from "./decor.js";
 import { hiSetOf, tokenize, isHi } from "./richtext.js";
+import { fadeCss } from "./fade.js";
 
 const HANDLES = [
   ["nw", 0, 0],
@@ -329,8 +330,9 @@ function ElementContent({ el, scale }) {
     );
   }
   if (el.type === "image") {
+    const fm = fadeCss(p.fade);
     return p.src ? (
-      <img src={p.src} alt="" style={{ width: "100%", height: "100%", objectFit: p.fit || "cover", display: "block" }} />
+      <img src={p.src} alt="" style={{ width: "100%", height: "100%", objectFit: p.fit || "cover", display: "block", ...(fm ? { WebkitMaskImage: fm, maskImage: fm } : {}) }} />
     ) : (
       <Placeholder label="Image — upload in inspector" />
     );
@@ -365,8 +367,9 @@ function AsciiElement({ el }) {
     return () => { cancelled = true; };
   }, [p.src, p.cols, p.rampKey, p.colorMode, p.invert, p.fontPx]);
 
+  const fm = fadeCss(p.fade);
   return url ? (
-    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }} />
+    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none", ...(fm ? { WebkitMaskImage: fm, maskImage: fm } : {}) }} />
   ) : (
     <Placeholder label="ASCII — set a source in inspector" />
   );

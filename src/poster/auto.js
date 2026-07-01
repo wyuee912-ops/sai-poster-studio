@@ -14,6 +14,7 @@ const SLOTS = [
 // proof) > keyword heuristics > default.
 export function autoTemplateId(b) {
   if (b.template && TEMPLATES_BY_ID[b.template]) return b.template;
+  if (/sai[\s-]?coded/i.test(JSON.stringify(b))) return "sai-coded"; // the campaign look
   const type = String(b.detectedType || b.type || "").toLowerCase();
   const blob = JSON.stringify(b).toLowerCase();
   const isHack = /hack(athon)?\b/.test(blob);

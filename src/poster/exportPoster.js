@@ -9,6 +9,7 @@ import { fitFont } from "./textfit.js";
 import { makeSampleCanvas } from "./model.js";
 import { drawDecor, decorSvg } from "./decor.js";
 import { hiSetOf, tokenize, isHi } from "./richtext.js";
+import { applyFadeCanvas, fadeSvgMask } from "./fade.js";
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -187,18 +188,33 @@ export async function renderPosterCanvas(doc, scale = 3) {
       try {
         const img = await loadImage(p.src);
         const f = fit(img.naturalWidth, img.naturalHeight, W, H, p.fit || "cover");
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(X, Y, W, H);
-        ctx.clip();
-        ctx.drawImage(img, X + f.dx, Y + f.dy, f.w, f.h);
-        ctx.restore();
+        if (p.fade === "down" || p.fade === "up") {
+          const ow = Math.max(1, Math.round(W)), oh = Math.max(1, Math.round(H));
+          const off = document.createElement("canvas"); off.width = ow; off.height = oh;
+          const octx = off.getContext("2d");
+          octx.save(); octx.beginPath(); octx.rect(0, 0, ow, oh); octx.clip();
+          octx.drawImage(img, f.dx, f.dy, f.w, f.h); octx.restore();
+          applyFadeCanvas(octx, ow, oh, p.fade);
+          ctx.drawImage(off, X, Y);
+        } else {
+          ctx.save(); ctx.beginPath(); ctx.rect(X, Y, W, H); ctx.clip();
+          ctx.drawImage(img, X + f.dx, Y + f.dy, f.w, f.h); ctx.restore();
+        }
       } catch {}
     } else if (el.type === "ascii") {
       const ac = await asciiCanvas(el);
       if (ac) {
         const f = fit(ac.width, ac.height, W, H, "contain");
-        ctx.drawImage(ac, X + f.dx, Y + f.dy, f.w, f.h);
+        if (p.fade === "down" || p.fade === "up") {
+          const ow = Math.max(1, Math.round(W)), oh = Math.max(1, Math.round(H));
+          const off = document.createElement("canvas"); off.width = ow; off.height = oh;
+          const octx = off.getContext("2d");
+          octx.drawImage(ac, f.dx, f.dy, f.w, f.h);
+          applyFadeCanvas(octx, ow, oh, p.fade);
+          ctx.drawImage(off, X, Y);
+        } else {
+          ctx.drawImage(ac, X + f.dx, Y + f.dy, f.w, f.h);
+        }
       }
     }
     ctx.restore();
@@ -268,12 +284,14 @@ export async function renderPosterSvg(doc) {
       parts.push(`<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)}) scale(${s.toFixed(4)})"${opAttr}><rect width="256" height="256" rx="56" fill="${p.fill || "#16D342"}"/>${paths}</g>`);
     } else if (el.type === "image" && p.src) {
       const par = (p.fit || "cover") === "cover" ? "xMidYMid slice" : "xMidYMid meet";
-      parts.push(`<image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${p.src}" preserveAspectRatio="${par}"${opAttr}/>`);
+      const { def, attr } = fadeSvgMask(el.id, p.fade, el.x, el.y, el.w, el.h);
+      parts.push(`${def}<image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${p.src}" preserveAspectRatio="${par}"${opAttr}${attr}/>`);
     } else if (el.type === "ascii" && p.src) {
       const ac = await asciiCanvas(el);
       if (ac) {
         const f = fit(ac.width, ac.height, el.w, el.h, "contain");
-        parts.push(`<image x="${(el.x + f.dx).toFixed(1)}" y="${(el.y + f.dy).toFixed(1)}" width="${f.w.toFixed(1)}" height="${f.h.toFixed(1)}" href="${ac.toDataURL()}"${opAttr}/>`);
+        const { def, attr } = fadeSvgMask(el.id, p.fade, el.x + f.dx, el.y + f.dy, f.w, f.h);
+        parts.push(`${def}<image x="${(el.x + f.dx).toFixed(1)}" y="${(el.y + f.dy).toFixed(1)}" width="${f.w.toFixed(1)}" height="${f.h.toFixed(1)}" href="${ac.toDataURL()}"${opAttr}${attr}/>`);
       }
     }
     if (el.rotation) parts.push(`</g>`);

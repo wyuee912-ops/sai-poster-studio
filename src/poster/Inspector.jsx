@@ -2,6 +2,7 @@ import React from "react";
 import { RAMPS, RAMP_LABELS } from "../ascii/charRamps.js";
 import { FONTS } from "../brand.js";
 import { DECOR_KINDS } from "./decor.js";
+import { FADE_DIRS } from "./fade.js";
 
 const COLOR_MODES = [
   ["mono", "Mono"],
@@ -157,6 +158,12 @@ export default function Inspector({ el, onUpdate, background, onBackground, size
               {["cover", "contain"].map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
+          <div className="col" style={{ gap: 4 }}>
+            <span className="field-label">Fade (gradient transparency)</span>
+            <select value={p.fade || "none"} onChange={(e) => setProp({ fade: e.target.value })}>
+              {FADE_DIRS.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
         </div>
       )}
 
@@ -187,6 +194,12 @@ export default function Inspector({ el, onUpdate, background, onBackground, size
           <label className="row" style={{ gap: 6, fontSize: 12 }}>
             <input type="checkbox" checked={p.invert} onChange={(e) => setProp({ invert: e.target.checked })} /> Invert
           </label>
+          <div className="col" style={{ gap: 4 }}>
+            <span className="field-label">Fade (gradient transparency)</span>
+            <select value={p.fade || "none"} onChange={(e) => setProp({ fade: e.target.value })}>
+              {FADE_DIRS.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
         </div>
       )}
     </div>

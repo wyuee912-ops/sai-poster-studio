@@ -262,6 +262,25 @@ export const TEMPLATES = [
       };
     },
   },
+  {
+    id: "sai-coded",
+    name: "Sai Coded — campaign",
+    size: "instagram-square",
+    build(size, c) {
+      const { w: W, h: H } = size;
+      return {
+        size: { w: W, h: H, key: size.key },
+        background: "#000000",
+        elements: [
+          factories.saiMark({ name: "Sai mark", x: R(W * 0.75), y: R(H * 0.075), w: R(W * 0.16), h: R(W * 0.16) }),
+          T("Title", get(c, "Title", "Sai\nCoded"), R(W * 0.055), R(H * 0.07), R(W * 0.6), R(H * 0.28), { fontSize: R(W * 0.15), weight: 800, color: BRAND.green, uppercase: true, lineHeight: 0.92, shrink: true }),
+          T("Byline", get(c, "Byline", "by SIMULAR"), R(W * 0.06), R(H * 0.35), R(W * 0.6), R(H * 0.06), { fontSize: R(W * 0.05), weight: 800, color: "#ffffff" }),
+          T("Subtitle", get(c, "Subtitle", "10 days. 200 codes. Tell us how you'd use Sai."), R(W * 0.06), R(H * 0.42), R(W * 0.86), R(H * 0.08), { fontSize: R(W * 0.034), weight: 700, color: BRAND.green, lineHeight: 1.2, shrink: true }),
+          factories.image({ name: "Butterfly", x: R(W * 0.04), y: R(H * 0.49), w: R(W * 0.92), h: R(H * 0.49), src: "/butterfly.png", props: { fit: "contain", fade: "down" } }),
+        ],
+      };
+    },
+  },
 ];
 
 export const TEMPLATES_BY_ID = Object.fromEntries(TEMPLATES.map((t) => [t.id, t]));
