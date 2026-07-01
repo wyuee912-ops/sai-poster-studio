@@ -145,12 +145,26 @@ Free-form drag/resize, rotation handle (snaps to 15°), align-to-canvas + snap-t
 guides, font picker (Manrope/Inter/Adamina/Instrument/Mono), per-word keyword highlighting,
 decorative background patterns, per-layer opacity, layers panel, zoom, localStorage + disk sync.
 
-## Headless / batch (optional, still no keys)
-For files without opening the editor (needs `npx playwright install chromium` once):
+## Batch — dump many ideas, get all posters at once
+
+When the user gives a **list of ideas** (e.g. "make 10 posters: …" or 10 lines/paragraphs), don't
+push them one at a time. Write one brief per idea into a dedicated folder, render them all, and open
+the **gallery** (a contact sheet of every poster). Needs `npx playwright install chromium` once.
+
 ```bash
-npm run generate briefs/ --out posters --scale 3   # every brief → PNG
-npm run watch                                       # auto-render anything dropped in briefs/
+mkdir -p briefs/<batch>                 # e.g. briefs/saicoded
+# write one brief per idea, numbered so the gallery is ordered:
+#   briefs/<batch>/01-slug.md, briefs/<batch>/02-slug.md, …
+npm run generate briefs/<batch> --out posters/<batch> --scale 3
+open posters/<batch>/gallery.html       # every poster in a grid; click any to open full size
 ```
+
+`gallery.html` is a self-contained contact sheet written next to the PNGs — this is how the user
+"views all of them at once." Rules: one idea per brief, number the files (`01-`…) for order, keep each
+on-brand (strip emoji, tight copy), let templates auto-pick unless a `type:`/`template:` is obvious.
+Any single poster can then be opened in the editor for fine-tuning: `npm run push briefs/<batch>/03-foo.md`.
+
+Also available: `npm run watch` — auto-renders anything dropped into `briefs/`.
 
 ## Common mistakes
 | Mistake | Fix |

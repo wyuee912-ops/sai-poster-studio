@@ -33,7 +33,7 @@ const briefs = [];
 for (const inp of inputs) {
   const p = path.resolve(inp);
   if (fs.existsSync(p) && fs.statSync(p).isDirectory())
-    briefs.push(...fs.readdirSync(p).filter((f) => /\.(json|md|markdown)$/i.test(f)).map((f) => path.join(p, f)));
+    briefs.push(...fs.readdirSync(p).filter((f) => /\.(json|md|markdown)$/i.test(f) && !/^readme\b/i.test(f)).map((f) => path.join(p, f)));
   else briefs.push(p);
 }
 
@@ -65,6 +65,7 @@ await page.goto(`http://localhost:${port}/render.html`);
 await page.waitForFunction(() => typeof window.renderPNG === "function", { timeout: 15000 });
 
 let ok = 0;
+const results = [];
 for (const bf of briefs) {
   const base = path.basename(bf).replace(/\.(json|md|markdown)$/i, "");
   try {
@@ -73,16 +74,49 @@ for (const bf of briefs) {
     if (flags.svg) {
       const svg = await page.evaluate((b) => window.renderSVG(b), brief);
       fs.writeFileSync(path.join(flags.out, `${base}.svg`), svg);
+      results.push({ base, file: `${base}.svg`, picked });
       console.log(`✓ ${base}.svg  [${picked}]`);
     } else {
       const dataUrl = await page.evaluate(({ b, s }) => window.renderPNG(b, s), { b: brief, s: flags.scale });
       fs.writeFileSync(path.join(flags.out, `${base}.png`), Buffer.from(dataUrl.split(",")[1], "base64"));
+      results.push({ base, file: `${base}.png`, picked });
       console.log(`✓ ${base}.png  [${picked}]`);
     }
     ok++;
   } catch (e) {
     console.error(`✗ ${base} — ${e.message}`);
   }
+}
+
+// Contact sheet — one page that shows every poster in the batch, so you can
+// view all of them at once (open gallery.html, or serve the folder).
+if (results.length) {
+  const cells = results
+    .map((r) => `      <figure><a href="./${r.file}" target="_blank" title="Open ${r.base}"><img loading="lazy" src="./${r.file}" alt="${r.base}"></a><figcaption><span class="n">${r.base}</span><span class="t">${r.picked}</span></figcaption></figure>`)
+    .join("\n");
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sai poster batch — ${results.length} poster${results.length === 1 ? "" : "s"}</title>
+<style>
+  :root { --green:#16D342; --ink:#15161a; --soft:#8a8b86; --line:#e7e7e2; }
+  * { box-sizing:border-box; } body { margin:0; font-family:Manrope,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink); background:#fbfbf9; }
+  header { padding:22px 28px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:18px; font-weight:800; } header p { margin:4px 0 0; color:var(--soft); font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; padding:24px 28px; }
+  figure { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  figure a { display:block; background:#f4f4f2; } figure img { display:block; width:100%; height:260px; object-fit:contain; }
+  figcaption { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; font-size:12.5px; }
+  figcaption .n { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  figcaption .t { flex:none; color:#063d15; background:var(--green); border-radius:20px; padding:2px 9px; font-weight:700; font-size:11px; }
+</style></head>
+<body>
+  <header><h1>Sai poster batch</h1><p>${results.length} poster${results.length === 1 ? "" : "s"} · click any to open full size</p></header>
+  <div class="grid">
+${cells}
+  </div>
+</body></html>`;
+  fs.writeFileSync(path.join(flags.out, "gallery.html"), html);
+  console.log(`▸ gallery: ${path.join(flags.out, "gallery.html")}`);
 }
 
 await browser.close();

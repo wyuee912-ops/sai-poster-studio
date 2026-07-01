@@ -112,12 +112,17 @@ npm run dev        # http://localhost:5181
 
 ```bash
 npm run push briefs/launch.md                       # → appears live in the open editor (~2s)
-npm run generate briefs/ --out posters --scale 3    # → high-res PNG files (folder or specific files)
+npm run generate briefs/ --out posters --scale 3    # → a PNG per brief + a gallery.html contact sheet
 npm run watch                                       # → auto-render anything dropped into briefs/
 ```
 
 `generate` / `watch` drive the **same renderer** the app uses (via headless Chromium), so output is
 identical. SVG instead of PNG: add `--svg`. One-time setup for headless: `npx playwright install chromium`.
+
+**Batch a whole set → view them together.** Point `generate` at a folder of briefs and it renders each
+one *and* writes `posters/<out>/gallery.html` — a contact sheet showing every poster in a grid (click
+any to open full size). So "dump 10 ideas → get 10 posters you can view at once" is: write 10 briefs
+into a folder, run `generate`, open the gallery.
 
 **3. From plain English — the Claude Skill** — describe the poster to Claude and it extracts a brief
 and pushes it for you. e.g. *"Day 2 of #SaiCoded — Sai makes editable docs, sheets & slides"* → a
