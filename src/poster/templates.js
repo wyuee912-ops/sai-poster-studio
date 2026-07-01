@@ -276,7 +276,7 @@ export const TEMPLATES = [
           T("Title", get(c, "Title", "Sai\nCoded"), R(W * 0.055), R(H * 0.07), R(W * 0.6), R(H * 0.28), { fontSize: R(W * 0.15), weight: 800, color: BRAND.green, uppercase: true, lineHeight: 0.92, shrink: true }),
           T("Byline", get(c, "Byline", "by SIMULAR"), R(W * 0.06), R(H * 0.35), R(W * 0.6), R(H * 0.06), { fontSize: R(W * 0.05), weight: 800, color: "#ffffff" }),
           T("Subtitle", get(c, "Subtitle", "10 days. 200 codes. Tell us how you'd use Sai."), R(W * 0.06), R(H * 0.42), R(W * 0.86), R(H * 0.08), { fontSize: R(W * 0.034), weight: 700, color: BRAND.green, lineHeight: 1.2, shrink: true }),
-          factories.image({ name: "Butterfly", x: R(W * 0.04), y: R(H * 0.49), w: R(W * 0.92), h: R(H * 0.49), src: "/butterfly.png", props: { fit: "contain", fade: "down" } }),
+          factories.image({ name: "Butterfly", x: R(W * 0.04), y: R(H * 0.49), w: R(W * 0.92), h: R(H * 0.49), src: "/butterfly-white.png", props: { fit: "contain", fade: "down" } }),
         ],
       };
     },
@@ -295,7 +295,7 @@ export const TEMPLATES = [
           T("Eyebrow", get(c, "Eyebrow", "Day 1 · #SaiCoded"), R(W * 0.06), R(H * 0.075), R(W * 0.66), R(H * 0.05), { fontSize: R(W * 0.032), weight: 800, color: BRAND.green, uppercase: true, tracking: R(W * 0.003) }),
           T("Title", get(c, "Title", "What would you hand off?"), R(W * 0.06), R(H * 0.19), R(W * 0.88), R(H * 0.26), { fontSize: R(W * 0.08), weight: 800, color: "#ffffff", lineHeight: 1.02, shrink: true }),
           T("Subtitle", get(c, "Subtitle", "Sai works real programs like a person — seeing, clicking, typing."), R(W * 0.06), R(H * 0.47), R(W * 0.86), R(H * 0.12), { fontSize: R(W * 0.034), weight: 600, color: BRAND.green, lineHeight: 1.25, shrink: true }),
-          factories.image({ name: "Butterfly", x: R(W * 0.08), y: R(H * 0.53), w: R(W * 0.84), h: R(H * 0.43), src: "/butterfly.png", props: { fit: "contain", fade: "down", opacity: 0.5 } }),
+          factories.image({ name: "Butterfly", x: R(W * 0.08), y: R(H * 0.53), w: R(W * 0.84), h: R(H * 0.43), src: "/butterfly-white.png", props: { fit: "contain", fade: "down", opacity: 0.62 } }),
           T("Footer", get(c, "Footer", "Reply · 20 codes today · #trysai"), R(W * 0.06), R(H * 0.92), R(W * 0.88), R(H * 0.05), { fontSize: R(W * 0.03), weight: 700, color: "#9a9b96" }),
         ],
       };
