@@ -485,6 +485,10 @@ export default function App() {
           </div>
         )}
       </div>
+      <footer style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 16px", borderTop: "1px solid var(--line)", background: "#fff", fontSize: 11.5, color: "var(--soft)", flexWrap: "wrap" }}>
+        <span>Drag to move · click to select · <b>Del</b> remove · <b>⌘/Ctrl+Z</b> undo · <b>⌘/Ctrl+scroll</b> zoom · edits auto-save</span>
+        <span>Sai Poster Studio · no API keys · <a href="https://simular.ai" target="_blank" rel="noreferrer" style={{ color: "var(--green-ink)", textDecoration: "none", fontWeight: 700 }}>simular.ai</a></span>
+      </footer>
       {showTemplates && (
         <TemplatePicker activeId={templateId} onPick={applyTemplate} onClose={() => setShowTemplates(false)} />
       )}
