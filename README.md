@@ -2,7 +2,7 @@
 
 # Sai Poster Studio
 
-**Turn a line of text into a finished, on-brand Sai poster — in the browser, in seconds.**
+**Generate a finished, on-brand poster in seconds — describe it in plain English, export print-ready PNG/SVG. No design tools, no API keys.**
 
 A local Vite + React design tool: start from one of 11 Simular-brand templates, drop in your
 copy (or a one-line *brief*), and export print-resolution PNG / SVG. It pairs a free-form layout
