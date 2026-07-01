@@ -281,6 +281,26 @@ export const TEMPLATES = [
       };
     },
   },
+  {
+    id: "sai-coded-day",
+    name: "Sai Coded — daily",
+    size: "instagram-square",
+    build(size, c) {
+      const { w: W, h: H } = size;
+      return {
+        size: { w: W, h: H, key: size.key },
+        background: "#000000",
+        elements: [
+          factories.saiMark({ name: "Sai mark", x: R(W * 0.8), y: R(H * 0.06), w: R(W * 0.12), h: R(W * 0.12) }),
+          T("Eyebrow", get(c, "Eyebrow", "Day 1 · #SaiCoded"), R(W * 0.06), R(H * 0.075), R(W * 0.66), R(H * 0.05), { fontSize: R(W * 0.032), weight: 800, color: BRAND.green, uppercase: true, tracking: R(W * 0.003) }),
+          T("Title", get(c, "Title", "What would you hand off?"), R(W * 0.06), R(H * 0.19), R(W * 0.88), R(H * 0.26), { fontSize: R(W * 0.08), weight: 800, color: "#ffffff", lineHeight: 1.02, shrink: true }),
+          T("Subtitle", get(c, "Subtitle", "Sai works real programs like a person — seeing, clicking, typing."), R(W * 0.06), R(H * 0.47), R(W * 0.86), R(H * 0.12), { fontSize: R(W * 0.034), weight: 600, color: BRAND.green, lineHeight: 1.25, shrink: true }),
+          factories.image({ name: "Butterfly", x: R(W * 0.08), y: R(H * 0.53), w: R(W * 0.84), h: R(H * 0.43), src: "/butterfly.png", props: { fit: "contain", fade: "down", opacity: 0.5 } }),
+          T("Footer", get(c, "Footer", "Reply · 20 codes today · #trysai"), R(W * 0.06), R(H * 0.92), R(W * 0.88), R(H * 0.05), { fontSize: R(W * 0.03), weight: 700, color: "#9a9b96" }),
+        ],
+      };
+    },
+  },
 ];
 
 export const TEMPLATES_BY_ID = Object.fromEntries(TEMPLATES.map((t) => [t.id, t]));
