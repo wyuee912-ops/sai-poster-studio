@@ -12,6 +12,23 @@ function loadDoc() {
   // Start from a real-brand template so the Content panel has fill-in slots.
   return buildTemplate("cal-hacks", templateSize("cal-hacks"), {});
 }
+// A project is an array of poster docs (the pages shown in the Gallery). Reads
+// the new {pages:[…]} shape, or wraps a single legacy doc as one page.
+function loadProject() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_DOC) || "null");
+    if (d && Array.isArray(d.pages) && d.pages.length) return d.pages;
+    if (d && d.size && Array.isArray(d.elements)) return [d];
+  } catch (e) {}
+  return [buildTemplate("cal-hacks", templateSize("cal-hacks"), {})];
+}
+// Normalize whatever the server/localStorage holds into a pages array (or null).
+const asPages = (blob) =>
+  blob && Array.isArray(blob.pages) && blob.pages.length
+    ? blob.pages
+    : blob && blob.size && Array.isArray(blob.elements)
+    ? [blob]
+    : null;
 import Editor from "./poster/Editor.jsx";
 import Inspector from "./poster/Inspector.jsx";
 import LayerList from "./poster/LayerList.jsx";
@@ -24,7 +41,18 @@ import { fetchDoc, fetchVersion, saveDoc } from "./studioSync.js";
 
 export default function App() {
   const [tab, setTab] = useState("editor");
-  const [doc, setDoc] = useState(loadDoc);
+  // The document is a project of pages; `doc` is the active page and `setDoc`
+  // updates it — so every existing editor operation keeps working unchanged.
+  const [pages, setPages] = useState(loadProject);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const activeIdxRef = useRef(0);
+  activeIdxRef.current = Math.min(activeIdx, pages.length - 1);
+  const doc = pages[activeIdxRef.current] || pages[0];
+  const setDoc = (u) =>
+    setPages((ps) => {
+      const i = activeIdxRef.current < ps.length ? activeIdxRef.current : 0;
+      return ps.map((p, k) => (k === i ? (typeof u === "function" ? u(p) : u) : p));
+    });
   const [selectedId, setSelectedId] = useState(null);
   const [importMsg, setImportMsg] = useState("");
   const [pngScale, setPngScale] = useState(3);
@@ -62,14 +90,16 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     fetchDoc()
-      .then(({ v, doc: serverDoc }) => {
+      .then(({ v, doc: blob }) => {
         if (cancelled) return;
         serverOk.current = true;
         serverV.current = v || 0;
-        if (serverDoc && serverDoc.size && Array.isArray(serverDoc.elements)) {
+        const pgs = asPages(blob);
+        if (pgs) {
           applyingExternal.current = true;
           histReset.current = true;
-          setDoc(serverDoc);
+          setPages(pgs);
+          setActiveIdx(0);
           setSelectedId(null);
         }
       })
@@ -84,14 +114,15 @@ export default function App() {
     if (applyingExternal.current) { applyingExternal.current = false; return; } // don't re-save a doc we just loaded
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      try { localStorage.setItem(LS_DOC, JSON.stringify(doc)); } catch (e) {}
+      const blob = { pages };
+      try { localStorage.setItem(LS_DOC, JSON.stringify(blob)); } catch (e) {}
       if (serverOk.current) {
         lastLocalSave.current = Date.now();
-        saveDoc(doc).then(({ v }) => { if (v) serverV.current = v; }).catch(() => {});
+        saveDoc(blob).then(({ v }) => { if (v) serverV.current = v; }).catch(() => {});
       }
     }, 400);
     return () => saveTimer.current && clearTimeout(saveTimer.current);
-  }, [doc]);
+  }, [pages]);
 
   // Poll: if the document changed on disk elsewhere (the automation pushed a new
   // poster, or another tab saved), load it live into this open editor.
@@ -102,14 +133,16 @@ export default function App() {
       try {
         const { v } = await fetchVersion();
         if (v && v !== serverV.current) {
-          const { v: v2, doc: serverDoc } = await fetchDoc();
+          const { v: v2, doc: blob } = await fetchDoc();
           serverV.current = v2 || v;
-          if (serverDoc && serverDoc.size && Array.isArray(serverDoc.elements)) {
+          const pgs = asPages(blob);
+          if (pgs) {
             applyingExternal.current = true;
             histReset.current = true;
-            setDoc(serverDoc);
+            setPages(pgs);
+            setActiveIdx(0);
             setSelectedId(null);
-            setImportMsg("↻ Loaded the latest poster from disk");
+            setImportMsg(pgs.length > 1 ? `↻ Loaded ${pgs.length} posters from disk` : "↻ Loaded the latest poster from disk");
           }
         }
       } catch (e) { serverOk.current = false; }
@@ -215,6 +248,25 @@ export default function App() {
 
   const setBackground = (color) => setDoc((d) => ({ ...d, background: color }));
   const setDecor = (decor) => setDoc((d) => ({ ...d, decor }));
+
+  // ---- Pages (the Gallery grid) ----
+  const goToPage = (idx) => { histReset.current = true; setActiveIdx(idx); setSelectedId(null); setTab("editor"); };
+  const addPage = () => {
+    const d = buildTemplate(templateId, templateSize(templateId, doc.size.key), {});
+    histReset.current = true;
+    setPages((ps) => [...ps, d]);
+    setActiveIdx(pages.length);
+    setSelectedId(null);
+    setTab("editor");
+  };
+  const duplicatePage = (idx) => setPages((ps) => { const n = ps.slice(); n.splice(idx + 1, 0, clone(ps[idx])); return n; });
+  const deletePage = (idx) => {
+    if (pages.length <= 1) return;
+    histReset.current = true;
+    setPages((ps) => ps.filter((_, i) => i !== idx));
+    setActiveIdx((i) => Math.max(0, i >= idx ? i - 1 : i));
+    setSelectedId(null);
+  };
 
   const changeSize = (key) => {
     const content = readContent(doc);
@@ -326,11 +378,19 @@ export default function App() {
         </div>
         <div className="row" style={{ gap: 4, marginLeft: 6 }}>
           <button className={`btn ${tab === "editor" ? "active" : ""}`} style={{ padding: "6px 12px" }} onClick={() => setTab("editor")}>Editor</button>
+          <button className={`btn ${tab === "gallery" ? "active" : ""}`} style={{ padding: "6px 12px" }} onClick={() => setTab("gallery")}>Gallery{pages.length > 1 ? ` (${pages.length})` : ""}</button>
           <button className={`btn ${tab === "ascii" ? "active" : ""}`} style={{ padding: "6px 12px" }} onClick={() => setTab("ascii")}>ASCII lab</button>
         </div>
         <div style={{ flex: 1 }} />
         {tab === "editor" && (
           <div className="row" style={{ gap: 8 }}>
+            {pages.length > 1 && (
+              <div className="row" style={{ gap: 4, marginRight: 2 }}>
+                <button className="btn" style={{ padding: "6px 9px" }} title="Previous poster" disabled={activeIdx <= 0} onClick={() => goToPage(Math.max(0, activeIdx - 1))}>‹</button>
+                <span style={{ fontSize: 12, fontWeight: 700, minWidth: 42, textAlign: "center", color: "#15161a" }}>{activeIdx + 1} / {pages.length}</span>
+                <button className="btn" style={{ padding: "6px 9px" }} title="Next poster" disabled={activeIdx >= pages.length - 1} onClick={() => goToPage(Math.min(pages.length - 1, activeIdx + 1))}>›</button>
+              </div>
+            )}
             <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Undo (⌘/Ctrl+Z)" disabled={!canUndo} onClick={undo}>↶</button>
             <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Redo (⌘/Ctrl+Shift+Z)" disabled={!canRedo} onClick={redo}>↷</button>
             <button className="btn" style={{ padding: "6px 12px" }} onClick={() => setShowTemplates(true)}>Templates</button>
@@ -375,6 +435,8 @@ export default function App() {
       <div style={{ flex: 1, minHeight: 0 }}>
         {tab === "ascii" ? (
           <AsciiLab />
+        ) : tab === "gallery" ? (
+          <GalleryView pages={pages} activeIdx={activeIdx} onOpen={goToPage} onAdd={addPage} onDuplicate={duplicatePage} onDelete={deletePage} />
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "262px 1fr 300px", height: "100%" }}>
             <aside style={{ borderRight: "1px solid var(--line)", padding: 16, overflow: "auto", background: "var(--surface)" }}>
@@ -431,6 +493,51 @@ function ContentPanel({ slots, onChange, onSelect, onOpenTemplates }) {
           />
         </div>
       ))}
+    </div>
+  );
+}
+
+function GalleryView({ pages, activeIdx, onOpen, onAdd, onDuplicate, onDelete }) {
+  const [thumbs, setThumbs] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < pages.length; i++) {
+        try {
+          const d = pages[i];
+          const cv = await renderPosterCanvas(d, Math.max(0.2, 320 / d.size.w));
+          if (cancelled) return;
+          setThumbs((prev) => ({ ...prev, [i]: { url: cv.toDataURL(), ar: `${d.size.w} / ${d.size.h}` } }));
+        } catch (e) {}
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pages]);
+
+  return (
+    <div style={{ height: "100%", overflow: "auto", background: "#eceee8", padding: 24 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div><strong style={{ fontSize: 15 }}>Gallery</strong> <span style={{ color: "var(--soft)", fontSize: 13 }}>· {pages.length} poster{pages.length === 1 ? "" : "s"} · click one to edit</span></div>
+        <button className="btn primary" style={{ padding: "7px 14px" }} onClick={onAdd}>+ Add poster</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 18 }}>
+        {pages.map((d, i) => (
+          <div key={i} style={{ border: `2px solid ${i === activeIdx ? "var(--green)" : "var(--line2)"}`, borderRadius: 12, overflow: "hidden", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
+            <button onClick={() => onOpen(i)} title="Edit this poster" style={{ display: "block", width: "100%", border: "none", padding: 0, background: "#f4f4f2", cursor: "pointer" }}>
+              <div style={{ aspectRatio: thumbs[i]?.ar || "1 / 1", display: "grid", placeItems: "center" }}>
+                {thumbs[i] ? <img src={thumbs[i].url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /> : <span style={{ fontSize: 11, color: "var(--soft)" }}>rendering…</span>}
+              </div>
+            </button>
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center", padding: "8px 10px" }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>Poster {i + 1}</span>
+              <div className="row" style={{ gap: 4 }}>
+                <button className="btn" style={{ padding: "3px 8px", fontSize: 13, lineHeight: 1 }} title="Duplicate" onClick={() => onDuplicate(i)}>⧉</button>
+                <button className="btn" style={{ padding: "3px 8px", fontSize: 12, lineHeight: 1 }} title="Delete" onClick={() => onDelete(i)} disabled={pages.length <= 1}>✕</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

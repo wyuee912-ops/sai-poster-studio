@@ -26,9 +26,20 @@ if (!fs.existsSync(src)) {
   process.exit(1);
 }
 
-const brief = parseBriefText(fs.readFileSync(src, "utf8"), src);
-const { doc, templateId } = posterFromBrief(brief);
 const file = path.join(ROOT, ".studio", "current.json");
 fs.mkdirSync(path.dirname(file), { recursive: true });
-fs.writeFileSync(file, JSON.stringify(doc));
-console.log(`✓ pushed [${templateId}] to the studio — open editor updates live (${path.relative(ROOT, file)})`);
+
+if (fs.statSync(src).isDirectory()) {
+  // Folder → the whole batch as pages, loaded into the studio's Gallery tab.
+  const files = fs.readdirSync(src)
+    .filter((f) => /\.(json|md|markdown)$/i.test(f) && !/^readme\b/i.test(f))
+    .sort()
+    .map((f) => path.join(src, f));
+  const pages = files.map((f) => posterFromBrief(parseBriefText(fs.readFileSync(f, "utf8"), f)).doc);
+  fs.writeFileSync(file, JSON.stringify({ pages }));
+  console.log(`✓ pushed ${pages.length} posters to the studio — open the Gallery tab at localhost:5181`);
+} else {
+  const { doc, templateId } = posterFromBrief(parseBriefText(fs.readFileSync(src, "utf8"), src));
+  fs.writeFileSync(file, JSON.stringify(doc));
+  console.log(`✓ pushed [${templateId}] to the studio — open editor updates live (${path.relative(ROOT, file)})`);
+}
