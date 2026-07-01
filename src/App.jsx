@@ -74,6 +74,7 @@ export default function App() {
   const serverV = useRef(0);               // last doc version we know about
   const lastLocalSave = useRef(0);         // when we last wrote (to ignore our own change while polling)
   const applyingExternal = useRef(false);  // we just setDoc() from disk — don't echo it straight back
+  const dirty = useRef(false);             // the user has edited — polling must never clobber it
 
   // ---- Undo / redo ----
   const docRef = useRef(doc); docRef.current = doc;
@@ -113,6 +114,7 @@ export default function App() {
   useEffect(() => {
     if (!hydrated.current) return;            // skip pre-hydration renders
     if (applyingExternal.current) { applyingExternal.current = false; return; } // don't re-save a doc we just loaded
+    dirty.current = true;                     // a genuine local edit — protect it from polling
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       const blob = { pages };
@@ -130,6 +132,7 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(async () => {
       if (!serverOk.current) return;
+      if (dirty.current) return; // you've edited this session — never overwrite your work
       if (Date.now() - lastLocalSave.current < 1500) return; // ignore our own just-written change
       try {
         const { v } = await fetchVersion();
@@ -141,7 +144,7 @@ export default function App() {
             applyingExternal.current = true;
             histReset.current = true;
             setPages(pgs);
-            setActiveIdx(0);
+            setActiveIdx((i) => Math.min(i, pgs.length - 1));
             setSelectedId(null);
             setImportMsg(pgs.length > 1 ? `↻ Loaded ${pgs.length} posters from disk` : "↻ Loaded the latest poster from disk");
           }
