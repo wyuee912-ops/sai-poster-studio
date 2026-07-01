@@ -60,6 +60,7 @@ export default function App() {
   const [templateId, setTemplateId] = useState("cal-hacks");
   const [leftTab, setLeftTab] = useState("content"); // content | layers
   const [showTemplates, setShowTemplates] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const selected = useMemo(() => doc.elements.find((e) => e.id === selectedId) || null, [doc, selectedId]);
 
@@ -393,7 +394,6 @@ export default function App() {
             )}
             <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Undo (⌘/Ctrl+Z)" disabled={!canUndo} onClick={undo}>↶</button>
             <button className="btn" style={{ padding: "6px 11px", fontSize: 16, lineHeight: 1 }} title="Redo (⌘/Ctrl+Shift+Z)" disabled={!canRedo} onClick={redo}>↷</button>
-            <button className="btn" style={{ padding: "6px 12px" }} onClick={() => setShowTemplates(true)}>Templates</button>
             <label className="btn primary" style={{ padding: "6px 12px" }} title="brief.json in → auto-pick template, fill, and export a PNG. One click.">
               {busy === "png" ? "Generating…" : "Auto-generate"}
               <input
@@ -415,14 +415,28 @@ export default function App() {
             <select value={doc.size.key} onChange={(e) => changeSize(e.target.value)} style={{ width: "auto" }}>
               {Object.entries(SIZES).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
             </select>
-            <select value={pngScale} onChange={(e) => setPngScale(+e.target.value)} style={{ width: "auto" }} title="PNG resolution">
-              {[2, 3, 4].map((s) => <option key={s} value={s}>{s}× ({doc.size.w * s}×{doc.size.h * s})</option>)}
-            </select>
-            <button className="btn primary" disabled={!!busy} onClick={async () => { setBusy("png"); try { await exportPng(doc, pngScale); } finally { setBusy(""); } }}>
-              {busy === "png" ? "Rendering…" : "Export PNG"}
-            </button>
-            <button className="btn" disabled={!!busy} onClick={async () => { setBusy("svg"); try { await exportSvg(doc); } finally { setBusy(""); } }}>SVG</button>
-            <button className="btn" onClick={exportJson}>JSON</button>
+            <div style={{ position: "relative" }}>
+              <button className="btn primary" style={{ padding: "6px 12px" }} disabled={!!busy} onClick={() => setExportOpen((o) => !o)}>
+                {busy ? "Rendering…" : "Export ▾"}
+              </button>
+              {exportOpen && (
+                <>
+                  <div onClick={() => setExportOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 41, background: "#fff", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.16)", padding: 6, minWidth: 190 }}>
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 8, padding: "4px 8px 8px" }}>
+                      <span className="field-label">Resolution</span>
+                      <select value={pngScale} onChange={(e) => setPngScale(+e.target.value)} style={{ width: "auto" }} title="PNG resolution">
+                        {[2, 3, 4].map((s) => <option key={s} value={s}>{s}× ({doc.size.w * s}×{doc.size.h * s})</option>)}
+                      </select>
+                    </div>
+                    <div style={{ height: 1, background: "var(--line)", margin: "2px 0 4px" }} />
+                    <MenuItem onClick={async () => { setExportOpen(false); setBusy("png"); try { await exportPng(doc, pngScale); } finally { setBusy(""); } }}>PNG</MenuItem>
+                    <MenuItem onClick={async () => { setExportOpen(false); setBusy("svg"); try { await exportSvg(doc); } finally { setBusy(""); } }}>SVG</MenuItem>
+                    <MenuItem onClick={() => { setExportOpen(false); exportJson(); }}>JSON</MenuItem>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </header>
@@ -494,6 +508,20 @@ function ContentPanel({ slots, onChange, onSelect, onOpenTemplates }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function MenuItem({ children, onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: hover ? "var(--green-soft)" : "transparent", padding: "8px 10px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#15161a" }}
+    >
+      {children}
+    </button>
   );
 }
 
