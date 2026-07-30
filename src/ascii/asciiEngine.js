@@ -92,7 +92,7 @@ export function renderAsciiCanvas(sample, ramp, options = {}) {
   const o = { ...DEFAULT_RENDER, ...options };
   const scale = o.scale || 1;
   const glyphH = o.fontPx * scale;
-  const glyphW = glyphH * sample.charAspect;
+  const glyphW = glyphH * sample.charAspect * (o.spaceDensity || 1);
   const cv = document.createElement("canvas");
   cv.width = Math.ceil(sample.cols * glyphW);
   cv.height = Math.ceil(sample.rows * glyphH);
@@ -120,7 +120,7 @@ export function renderAsciiCanvas(sample, ramp, options = {}) {
 export function renderAsciiSvg(sample, ramp, options = {}) {
   const o = { ...DEFAULT_RENDER, ...options };
   const glyphH = o.fontPx;
-  const glyphW = glyphH * sample.charAspect;
+  const glyphW = glyphH * sample.charAspect * (o.spaceDensity || 1);
   const W = (sample.cols * glyphW).toFixed(1);
   const H = (sample.rows * glyphH).toFixed(1);
   const perChar = o.colorMode === "color" || o.colorMode === "duotone";
