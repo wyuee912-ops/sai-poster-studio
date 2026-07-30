@@ -30,8 +30,9 @@ from plain text files — no manual design, no clicks.
 - **Text → poster, automatically** — a tiny Markdown or JSON *brief* auto-picks a template, fills
   it, and renders it. Run one-off, batch a whole folder, watch a folder, or push straight into the
   open editor.
-- **High-resolution ASCII art** — a built-in engine renders crisp vector / high-DPI ASCII (8 ramps,
-  multiple colour modes). The brand butterfly ships in `public/`.
+- **ASCII lab** — turn any image (or the brand butterfly) into crisp vector / high-DPI ASCII: 18 glyph
+  gradients, live image adjustments, edge detection, dithering, and four colour modes — export PNG / SVG
+  / text. See *[ASCII lab](#ascii-lab)*.
 - **Restyle in place** — decorative **background patterns** (grid / dots / glow), per-word **keyword
   highlighting**, five fonts (Manrope / Inter / Adamina / Instrument / Mono), and per-layer opacity.
 - **Print-quality export** — PNG at 2× / 3× / 4× (up to ~4800 px), true-vector SVG, or re-editable JSON.
@@ -90,6 +91,30 @@ Each poster below was produced by the Studio from a short brief — no manual la
     <td align="center"><img src="docs/examples/nyc-tech-week.png" width="240"><br><sub><b>editorial-cream</b><br>editorial feature</sub></td>
   </tr>
 </table>
+
+---
+
+## ASCII lab
+
+Turn any image into crisp, editable ASCII art. Drag in a photo — or start from the brand butterfly —
+then dial in the look; every control updates live, and what you preview is what you export (high-DPI
+PNG, true-vector SVG, or plain text).
+
+![The ASCII lab](docs/ascii-lab.png)
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/ascii-var-dark.png" width="240"><br><sub><b>Dark frame</b><br>green glyphs on black</sub></td>
+    <td align="center"><img src="docs/ascii-var-color.png" width="240"><br><sub><b>Hue + dithering</b><br>blocks · Floyd–Steinberg</sub></td>
+    <td align="center"><img src="docs/ascii-var-edge.png" width="240"><br><sub><b>Edge detection</b><br>duotone detail</sub></td>
+  </tr>
+</table>
+
+**Controls** — character density · **18 ASCII gradients** (Normal, Extended High, Blocks, Numerical,
+Math, Arrow, …) and glyph fonts · image adjustments (brightness, contrast, saturation, **hue,
+grayscale, sepia, invert**) · **edge detection**, sharpen & thresholding on the sampled grid ·
+**dithering** (Floyd–Steinberg, Atkinson, Jarvis, Stucki) · four colour modes, custom ink, space
+density, and a dark preview.
 
 ---
 
@@ -219,12 +244,14 @@ sai-poster-studio/
 │   │
 │   └── ascii/               ◆ the ASCII-art engine
 │       ├── asciiEngine.js   image → ASCII sampling + vector / high-DPI canvas render
-│       └── charRamps.js     the 8 character ramps + labels
+│       ├── adjust.js        lab pipeline — brightness/contrast, edge/sharpen, dither, colour filter
+│       └── charRamps.js     the 18 glyph gradients (ASCII "styles") + labels
 │
-├── scripts/                 ◆ automation (Node; no browser except generate/watch)
+├── scripts/                 ◆ automation (Node; no browser except generate/watch/shots)
 │   ├── push.mjs             write a brief into the LIVE studio (.studio/current.json)
 │   ├── generate.mjs         headless batch CLI — brief(s) → PNG/SVG via Playwright
-│   └── watch.mjs            watch briefs/ and auto-render anything dropped in
+│   ├── watch.mjs            watch briefs/ and auto-render anything dropped in
+│   └── shots.mjs            capture the README's ASCII-lab screenshots (Playwright)
 │
 ├── briefs/                  example briefs (*.json, *.md) + briefs/README.md (the format reference)
 ├── public/                  butterfly.png (brand ASCII art) · favicon.svg

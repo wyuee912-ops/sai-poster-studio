@@ -136,7 +136,7 @@ export default function AsciiLab() {
           {adj.edgeOn && <Slider label="Edge" value={adj.edge} min={0} max={5} step={0.5} onChange={(v) => setA({ edge: v })} />}
           <div className="col" style={{ gap: 3 }}>
             <span className="field-label">Dithering</span>
-            <select value={tone.dither} onChange={(e) => setT({ dither: e.target.value })} disabled={tone.thresholdOn}>
+            <select aria-label="Dithering" value={tone.dither} onChange={(e) => setT({ dither: e.target.value })} disabled={tone.thresholdOn}>
               {DITHER_MODES.map((d) => <option key={d} value={d}>{d === "none" ? "None" : d.replace(/(^|-)([a-z])/g, (_, s, c) => s + c.toUpperCase())}</option>)}
             </select>
           </div>
@@ -145,7 +145,7 @@ export default function AsciiLab() {
         <Group title="Glyphs">
           <div className="col" style={{ gap: 3 }}>
             <span className="field-label">ASCII gradient</span>
-            <select value={rampKey} onChange={(e) => setRampKey(e.target.value)}>
+            <select aria-label="ASCII gradient" value={rampKey} onChange={(e) => setRampKey(e.target.value)}>
               {RAMP_ORDER.filter((k) => RAMPS[k]).map((k) => <option key={k} value={k}>{RAMP_LABELS[k] || k}</option>)}
             </select>
           </div>
@@ -195,7 +195,7 @@ export default function AsciiLab() {
           <div className="eyebrow">Preview — {dims.w} × {dims.h}px · {RAMP_LABELS[rampKey] || rampKey}</div>
           <div style={{ fontSize: 12, color: "var(--muted)" }}>{(cols * (sample?.rows || 0)).toLocaleString()} characters</div>
         </div>
-        <div style={{ background: previewDark ? "#0c0c0c" : "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: 16, overflow: "auto", flex: 1, display: "grid", placeItems: "center" }}>
+        <div id="ascii-preview-card" style={{ background: previewDark ? "#0c0c0c" : "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: 16, overflow: "auto", flex: 1, display: "grid", placeItems: "center" }}>
           <div ref={previewRef} style={{ width: "100%" }} />
         </div>
       </main>
@@ -218,7 +218,7 @@ function Slider({ label, value, min, max, step = 1, onChange, suffix = "" }) {
         <span className="field-label">{label}</span>
         <span style={{ fontSize: 11, color: "var(--soft)", fontVariantNumeric: "tabular-nums" }}>{value}{suffix}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(+e.target.value)} />
+      <input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(+e.target.value)} />
     </div>
   );
 }
