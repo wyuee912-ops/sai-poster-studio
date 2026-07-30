@@ -47,7 +47,7 @@ export default function AsciiLab() {
     const img = new Image();
     img.onload = () => setSource(img);
     img.onerror = () => setSource(makeSampleCanvas());
-    img.src = "/butterfly.png";
+    img.src = "/butterfly-ink.png";
   };
   useEffect(() => { loadSample(); }, []);
 
