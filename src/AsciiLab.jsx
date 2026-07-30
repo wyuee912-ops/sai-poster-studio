@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { RAMPS, RAMP_LABELS } from "./ascii/charRamps.js";
 import { sampleImage, renderAsciiCanvas, renderAsciiSvg, asciiToText } from "./ascii/asciiEngine.js";
-import { adjustSource, applyTonemap, DITHER_MODES, DEFAULT_ADJUST } from "./ascii/adjust.js";
+import { adjustSource, applyStructure, applyTonemap, applyOutputFilter, outputFilterCss, DITHER_MODES, DEFAULT_ADJUST } from "./ascii/adjust.js";
 import { BRAND } from "./brand.js";
 import { makeSampleCanvas } from "./poster/model.js";
 
@@ -27,7 +27,7 @@ export default function AsciiLab() {
   const [spaceDensity, setSpaceDensity] = useState(1);
   const [adj, setAdj] = useState({ ...DEFAULT_ADJUST });
   const [tone, setTone] = useState({ thresholdOn: false, threshold: 128, dither: "none" });
-  const [colorMode, setColorMode] = useState("mono");
+  const [colorMode, setColorMode] = useState("green");
   const [ink, setInk] = useState(BRAND.ink);
   const [invert, setInvert] = useState(false);
   const [transparent, setTransparent] = useState(false);
@@ -53,12 +53,13 @@ export default function AsciiLab() {
 
   const ramp = RAMPS[rampKey] || RAMPS.standard;
 
-  // Full pipeline: adjust → sample → tonemap. Re-sampled fresh every change so
-  // the in-place tonemap never stacks on a stale grid.
+  // Full pipeline: brightness/contrast → sample → sharpen/edge → threshold/dither.
+  // Re-sampled fresh every change so the in-place steps never stack on a stale grid.
   const sample = useMemo(() => {
     if (!source) return null;
     const adjusted = adjustSource(source, adj);
     const s = sampleImage(adjusted, cols);
+    applyStructure(s, adj);
     applyTonemap(s, { rampLen: ramp.length, invert, ...tone });
     return s;
   }, [source, cols, adj, tone, rampKey, invert]);
@@ -70,11 +71,11 @@ export default function AsciiLab() {
 
   useEffect(() => {
     if (!sample || !previewRef.current) return;
-    const cv = renderAsciiCanvas(sample, ramp, renderOpts);
+    const cv = applyOutputFilter(renderAsciiCanvas(sample, ramp, renderOpts), adj);
     Object.assign(cv.style, { width: "100%", height: "auto", display: "block", borderRadius: "8px" });
     previewRef.current.replaceChildren(cv);
     setDims({ w: cv.width, h: cv.height, rows: sample.rows });
-  }, [sample, ramp, renderOpts]);
+  }, [sample, ramp, renderOpts, adj]);
 
   const loadFile = (file) => {
     if (!file || !file.type?.startsWith("image/")) return;
@@ -84,8 +85,14 @@ export default function AsciiLab() {
   };
   const onDrop = (e) => { e.preventDefault(); setDragOver(false); loadFile(e.dataTransfer.files?.[0]); };
 
-  const downloadPng = () => renderAsciiCanvas(sample, ramp, { ...renderOpts, scale: Math.max(scale, 4) }).toBlob((b) => dl(b, "sai-ascii.png"));
-  const downloadSvg = () => dl(new Blob([renderAsciiSvg(sample, ramp, renderOpts)], { type: "image/svg+xml" }), "sai-ascii.svg");
+  const downloadPng = () =>
+    applyOutputFilter(renderAsciiCanvas(sample, ramp, { ...renderOpts, scale: Math.max(scale, 4) }), adj).toBlob((b) => dl(b, "sai-ascii.png"));
+  const downloadSvg = () => {
+    const f = outputFilterCss(adj);
+    let svg = renderAsciiSvg(sample, ramp, renderOpts);
+    if (f !== "none") svg = svg.replace("<svg ", `<svg style="filter:${f}" `);
+    dl(new Blob([svg], { type: "image/svg+xml" }), "sai-ascii.svg");
+  };
   const copyText = () => navigator.clipboard?.writeText(asciiToText(sample, ramp, invert));
   const resetAll = () => { setAdj({ ...DEFAULT_ADJUST }); setTone({ thresholdOn: false, threshold: 128, dither: "none" }); };
 
